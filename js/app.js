@@ -87,12 +87,12 @@ const T = {
     tasks: {
       B: [
         'Build a server configuration: 50 total cores, 1 CPU, 256 GB RAM, 1 server, PUE 1.3',
-        'Adjust the RAM to 512 GB and the PUE to 1.6',
+        'Tell the model: "I want to adjust PUE and RAM." Then increase the RAM to 512 GB and PUE to 1.6',
         'Ask the model what the average PUE value is',
         'Ask the model to change the PUE to that average value',
         'Ask: What is the difference between ARM and x86?',
         'Ask: Tell me about RAID levels',
-        'Start a new configuration using guided help (use the Solution Agent in the parameter form)',
+        'Click the Parameter button, then click "Build with Solution Agent". Build any configuration you like',
         'Ask for the average emission settings for Germany'
       ],
       A: [
@@ -212,12 +212,12 @@ const T = {
     tasks: {
       B: [
         'Erstellen Sie eine Serverkonfiguration: 50 Kerne gesamt, 1 CPU, 256 GB RAM, 1 Server, PUE 1.3',
-        'Passen Sie den RAM auf 512 GB und den PUE auf 1.6 an',
+        'Sage dem Modell: „Ich möchte PUE und RAM anpassen." Erhöhe dann den RAM auf 512 GB und den PUE auf 1.6',
         'Fragen Sie das Modell nach dem durchschnittlichen PUE-Wert',
         'Bitten Sie das Modell, den PUE auf diesen Durchschnittswert zu ändern',
         'Fragen Sie: Was ist der Unterschied zwischen ARM und x86?',
         'Fragen Sie: Erkläre mir RAID-Level',
-        'Starten Sie eine neue Konfiguration mit der geführten Hilfe (Solution Agent im Parameterformular)',
+        'Klicke auf den Parameter-Button und dann auf „Build with Solution Agent". Baue damit eine beliebige Konfiguration',
         'Fragen Sie nach den durchschnittlichen Emissionswerten für Deutschland'
       ],
       A: [
