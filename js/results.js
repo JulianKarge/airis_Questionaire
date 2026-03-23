@@ -19,7 +19,7 @@ const T = {
     ueqNote: 'Scale 1–7. Mean response per item across all participants.',
     mean: 'Mean', median: 'Median', min: 'Min', max: 'Max',
     participantsBadge: (n) => `${n} participant${n !== 1 ? 's' : ''}`,
-    tableHeaders: ['#','Name','Occupation','Experience','Language','SUS A','Grade A','SUS B','Grade B','Date'],
+    tableHeaders: ['#','Name','Occupation','Experience','Language','Started With','SUS A','Grade A','SUS B','Grade B','Comp Q1','Comp Q2','Comp Q3','Date'],
     susGrades: { excellent:'Excellent', good:'Good', ok:'OK', poor:'Poor' },
     expLabels: { none:'None', beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced', expert:'Expert' },
     filterAll: 'All Languages',
@@ -57,7 +57,7 @@ const T = {
     ueqNote: 'Skala 1–7. Mittelwert pro Item über alle Teilnehmer.',
     mean: 'Mittelwert', median: 'Median', min: 'Min', max: 'Max',
     participantsBadge: (n) => `${n} Teilnehmer${n !== 1 ? '' : ''}`,
-    tableHeaders: ['#','Name','Beruf','Erfahrung','Sprache','SUS A','Note A','SUS B','Note B','Datum'],
+    tableHeaders: ['#','Name','Beruf','Erfahrung','Sprache','Begonnen mit','SUS A','Note A','SUS B','Note B','Vgl. F1','Vgl. F2','Vgl. F3','Datum'],
     susGrades: { excellent:'Ausgezeichnet', good:'Gut', ok:'OK', poor:'Schlecht' },
     expLabels: { none:'Keine', beginner:'Anfänger', intermediate:'Mittel', advanced:'Fortgeschritten', expert:'Experte' },
     filterAll: 'Alle Sprachen',
@@ -306,16 +306,22 @@ function renderTable(data) {
     const gradeB = susGrade(sB, l);
     const exp = l.expLabels[d.participant?.experience] || d.participant?.experience || '–';
     const date = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleDateString() : '–';
+    const comp = d.comparative || [];
+    const started = d.startedWith ? `<span class="sus-grade good">${d.startedWith}</span>` : '–';
     return `<tr>
       <td>${idx+1}</td>
       <td>${d.participant?.name || '–'}</td>
       <td>${d.participant?.occupation || '–'}</td>
       <td>${exp}</td>
       <td>${(d.lang || '–').toUpperCase()}</td>
+      <td>${started}</td>
       <td class="sus-score">${sA}</td>
       <td>${gradeA}</td>
       <td class="sus-score">${sB}</td>
       <td>${gradeB}</td>
+      <td>${comp[0] ?? '–'}</td>
+      <td>${comp[1] ?? '–'}</td>
+      <td>${comp[2] ?? '–'}</td>
       <td>${date}</td>
     </tr>`;
   }).join('');
@@ -343,13 +349,15 @@ function exportAll() {
   const ueqHeaders = Array.from({length:26}, (_,i) => `UEQ_A_Q${i+1}`).concat(
     Array.from({length:26}, (_,i) => `UEQ_B_Q${i+1}`)
   );
-  const headers = ['ID','Timestamp','Language','Name','Occupation','Experience',
-    ...susHeaders, 'SUS_Score_A', ...ueqHeaders, 'SUS_Score_B'].join(',');
+  const headers = ['ID','Timestamp','Language','StartedWith','Name','Occupation','Experience',
+    ...susHeaders, 'SUS_Score_A', ...ueqHeaders, 'SUS_Score_B',
+    'Comp_Q1','Comp_Q2','Comp_Q3'].join(',');
 
   const rows = data.map(d => {
     const ts = d.timestamp?.toDate ? d.timestamp.toDate().toISOString() : '';
+    const comp = d.comparative || [null, null, null];
     return [
-      d.id, ts, d.lang,
+      d.id, ts, d.lang, d.startedWith || '',
       `"${d.participant?.name || ''}"`,
       `"${d.participant?.occupation || ''}"`,
       d.participant?.experience || '',
@@ -357,8 +365,9 @@ function exportAll() {
       d.prototypeA?.susScore ?? '',
       ...(d.prototypeA?.ueq || new Array(26).fill('')),
       ...(d.prototypeB?.sus || new Array(10).fill('')),
+      d.prototypeB?.susScore ?? '',
       ...(d.prototypeB?.ueq || new Array(26).fill('')),
-      d.prototypeB?.susScore ?? ''
+      comp[0] ?? '', comp[1] ?? '', comp[2] ?? ''
     ].join(',');
   });
 

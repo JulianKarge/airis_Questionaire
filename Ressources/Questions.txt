@@ -84,4 +84,23 @@ UEQ (User Experience Questionnaire) – Deutsch
 26. konservativ — innovativ
 
 
+- Additional Comparable Questions - 
 
+
+English:
+
+Which interface would you prefer for your daily server configuration work?
+(1 = strongly prefer text-only, 4 = no preference, 7 = strongly prefer interactive)
+Which interface made the configuration task feel more efficient?
+(1 = strongly prefer text-only, 4 = no preference, 7 = strongly prefer interactive)
+I would integrate the interactive version into my OCA server configuration workflow.
+(1 = strongly disagree, 7 = strongly agree)
+
+German:
+
+Welche Oberfläche würden Sie für Ihre tägliche Serverkonfigurationsarbeit bevorzugen?
+(1 = starke Präferenz für textbasiert, 4 = keine Präferenz, 7 = starke Präferenz für interaktiv)
+Mit welcher Oberfläche fühlte sich die Konfigurationsaufgabe effizienter an?
+(1 = starke Präferenz für textbasiert, 4 = keine Präferenz, 7 = starke Präferenz für interaktiv)
+Ich würde die interaktive Version in meinen OCA-Serverkonfigurations-Workflow integrieren.
+(1 = stimme überhaupt nicht zu, 7 = stimme voll zu)
