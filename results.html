@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIRIS UX Study — Results</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/results.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo-mark">AI</div>
+      <span class="brand-name">AIRIS UX Study — Results</span>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="lang-btn" style="text-decoration:none">← Questionnaire</a>
+      <button class="lang-btn" id="langToggleBtn">Deutsch</button>
+    </div>
+  </header>
+
+  <div class="container" style="max-width:1100px">
+
+    <!-- Toolbar -->
+    <div class="results-toolbar card" id="toolbar">
+      <div class="toolbar-left">
+        <h2 id="resultsTitle">Study Results</h2>
+        <span id="participantCount" class="badge"></span>
+      </div>
+      <div class="toolbar-right">
+        <select id="filterLang" class="filter-select">
+          <option value="all">All Languages</option>
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <select id="filterExp" class="filter-select">
+          <option value="all" id="expAllLabel">All Experience</option>
+          <option value="none" id="expNone">No experience</option>
+          <option value="beginner" id="expBeginner">Beginner</option>
+          <option value="intermediate" id="expIntermediate">Intermediate</option>
+          <option value="advanced" id="expAdvanced">Advanced</option>
+          <option value="expert" id="expExpert">Expert</option>
+        </select>
+        <button class="btn btn-primary" id="exportAllBtn">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingState" class="card" style="text-align:center;padding:48px">
+      <div class="spinner"></div>
+      <p id="loadingText" style="color:#6B7280;margin-top:16px">Loading responses…</p>
+    </div>
+
+    <!-- Main content (hidden until loaded) -->
+    <div id="resultsContent" style="display:none">
+
+      <!-- SUS Score Overview -->
+      <div class="card">
+        <div class="section-label" id="susOverviewLabel">SUS Score Overview</div>
+        <div class="chart-grid-2">
+          <div class="chart-box">
+            <h3 class="chart-title" id="susALabel">Prototype A — SUS Scores</h3>
+            <canvas id="chartSUSA" height="240"></canvas>
+            <div class="score-summary" id="susSummaryA"></div>
+          </div>
+          <div class="chart-box">
+            <h3 class="chart-title" id="susBLabel">Prototype B — SUS Scores</h3>
+            <canvas id="chartSUSB" height="240"></canvas>
+            <div class="score-summary" id="susSummaryB"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUS Comparison -->
+      <div class="card">
+        <div class="section-label" id="susCompLabel">SUS — Per Question Comparison (A vs B)</div>
+        <canvas id="chartSUSComp" height="180"></canvas>
+      </div>
+
+      <!-- UEQ Overview -->
+      <div class="card">
+        <div class="section-label" id="ueqOverviewLabel">UEQ — Mean Scores per Item (A vs B)</div>
+        <p class="chart-note" id="ueqNote">Scale 1–7. Values represent the mean response per item across all participants.</p>
+        <canvas id="chartUEQ" height="300"></canvas>
+      </div>
+
+      <!-- UEQ Scales -->
+      <div class="card">
+        <div class="section-label" id="ueqScalesLabel">UEQ Scale Scores (A vs B)</div>
+        <canvas id="chartUEQScales" height="200"></canvas>
+      </div>
+
+      <!-- Participants table -->
+      <div class="card">
+        <div class="section-label" id="participantsLabel">All Participants</div>
+        <div class="table-wrap">
+          <table id="participantsTable" class="data-table">
+            <thead>
+              <tr id="tableHead"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <!-- /resultsContent -->
+
+  </div>
+
+  <script type="module" src="js/results.js"></script>
+</body>
+</html>

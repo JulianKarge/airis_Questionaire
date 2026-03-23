@@ -1,0 +1,87 @@
+SUS (System Usability Scale) Scale from 1(Strongly disagree) - 5 (Strongly agree)
+
+1. I think that I would like to use this system frequently.
+2. I found the system unnecessarily complex.
+3. I thought the system was easy to use.
+4. I think that I would need the support of a technical person to be able to use this system.
+5. I found the various functions in this system were well integrated.
+6. I thought there was too much inconsistency in this system.
+7. I would imagine that most people would learn to use this system very quickly.
+8. I found the system very cumbersome to use.
+9. I felt very confident using the system.
+10. I needed to learn a lot of things before I could get going with this system.
+
+UEQ (User Experience Questionnaire) Scale from 1(Most in favor of left condition) - 7(Most in favor of right condition)
+
+1. annoying — enjoyable
+2. not understandable — understandable
+3. creative — dull
+4. easy to learn — difficult to learn
+5. valuable — inferior
+6. boring — exciting
+7. not interesting — interesting
+8. unpredictable — predictable
+9. fast — slow
+10. inventive — conventional
+11. obstructive — supportive
+12. good — bad
+13. complicated — easy
+14. unlikable — pleasing
+15. usual — leading edge
+16. unpleasant — pleasant
+17. secure — not secure
+18. motivating — demotivating
+19. meets expectations — does not meet expectations
+20. inefficient — efficient
+21. clear — confusing
+22. impractical — practical
+23. organized — cluttered
+24. attractive — unattractive
+25. friendly — unfriendly
+26. conservative — innovative
+
+
+SUS (System Usability Scale) – Deutsch
+
+1. Ich denke, dass ich dieses System gerne häufig benutzen würde.
+2. Ich fand das System unnötig komplex.
+3. Ich fand das System einfach zu benutzen.
+4. Ich denke, dass ich die Unterstützung durch eine technische Person benötigen würde, um dieses System benutzen zu können.
+5. Ich fand, dass die verschiedenen Funktionen in diesem System gut integriert waren.
+6. Ich fand, dass es in diesem System zu viele Inkonsistenzen gab.
+7. Ich kann mir vorstellen, dass die meisten Menschen den Umgang mit diesem System sehr schnell lernen würden.
+8. Ich fand das System sehr umständlich zu benutzen.
+9. Ich fühlte mich im Umgang mit dem System sehr sicher.
+10. Ich musste viele Dinge lernen, bevor ich mit diesem System loslegen konnte.
+
+UEQ (User Experience Questionnaire) – Deutsch
+
+1. unerquicklich — angenehm
+2. unverständlich — verständlich
+3. kreativ — langweilig
+4. leicht zu lernen — schwer zu lernen
+5. wertvoll — minderwertig
+6. langweilig — spannend
+7. nicht interessant — interessant
+8. unvorhersehbar — vorhersehbar
+9. schnell — langsam
+10. erfinderisch — konventionell
+11. behindernd — unterstützend
+12. gut — schlecht
+13. kompliziert — einfach
+14. unsympathisch — angenehm
+15. gewöhnlich — innovativ
+16. unangenehm — angenehm
+17. sicher — nicht sicher
+18. motivierend — demotivierend
+19. entspricht den Erwartungen — entspricht nicht den Erwartungen
+20. ineffizient — effizient
+21. klar — verwirrend
+22. unpraktisch — praktisch
+23. übersichtlich — unübersichtlich
+24. attraktiv — unattraktiv
+25. freundlich — unfreundlich
+26. konservativ — innovativ
+
+
+
