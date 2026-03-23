@@ -61,12 +61,18 @@
         <div class="section-label" id="susOverviewLabel">SUS Score Overview</div>
         <div class="chart-grid-2">
           <div class="chart-box">
-            <h3 class="chart-title" id="susALabel">Prototype A — SUS Scores</h3>
+            <div class="chart-title-row">
+              <h3 class="chart-title" id="susALabel">Prototype A — SUS Scores</h3>
+              <button class="btn-dl" onclick="downloadChart('chartSUSA','sus-prototype-a.png')" title="Download PNG">⬇ PNG</button>
+            </div>
             <canvas id="chartSUSA" height="240"></canvas>
             <div class="score-summary" id="susSummaryA"></div>
           </div>
           <div class="chart-box">
-            <h3 class="chart-title" id="susBLabel">Prototype B — SUS Scores</h3>
+            <div class="chart-title-row">
+              <h3 class="chart-title" id="susBLabel">Prototype B — SUS Scores</h3>
+              <button class="btn-dl" onclick="downloadChart('chartSUSB','sus-prototype-b.png')" title="Download PNG">⬇ PNG</button>
+            </div>
             <canvas id="chartSUSB" height="240"></canvas>
             <div class="score-summary" id="susSummaryB"></div>
           </div>
@@ -75,21 +81,30 @@
 
       <!-- SUS Comparison -->
       <div class="card">
-        <div class="section-label" id="susCompLabel">SUS — Per Question Comparison (A vs B)</div>
-        <canvas id="chartSUSComp" height="180"></canvas>
+        <div class="chart-title-row">
+          <div class="section-label" id="susCompLabel" style="margin-bottom:0">SUS — Per Question Comparison (A vs B)</div>
+          <button class="btn-dl" onclick="downloadChart('chartSUSComp','sus-comparison.png')" title="Download PNG">⬇ PNG</button>
+        </div>
+        <canvas id="chartSUSComp" height="180" style="margin-top:16px"></canvas>
       </div>
 
       <!-- UEQ Overview -->
       <div class="card">
-        <div class="section-label" id="ueqOverviewLabel">UEQ — Mean Scores per Item (A vs B)</div>
-        <p class="chart-note" id="ueqNote">Scale 1–7. Values represent the mean response per item across all participants.</p>
+        <div class="chart-title-row">
+          <div class="section-label" id="ueqOverviewLabel" style="margin-bottom:0">UEQ — Mean Scores per Item (A vs B)</div>
+          <button class="btn-dl" onclick="downloadChart('chartUEQ','ueq-items.png')" title="Download PNG">⬇ PNG</button>
+        </div>
+        <p class="chart-note" id="ueqNote" style="margin-top:8px">Scale 1–7. Values represent the mean response per item across all participants.</p>
         <canvas id="chartUEQ" height="300"></canvas>
       </div>
 
       <!-- UEQ Scales -->
       <div class="card">
-        <div class="section-label" id="ueqScalesLabel">UEQ Scale Scores (A vs B)</div>
-        <canvas id="chartUEQScales" height="200"></canvas>
+        <div class="chart-title-row">
+          <div class="section-label" id="ueqScalesLabel" style="margin-bottom:0">UEQ Scale Scores (A vs B)</div>
+          <button class="btn-dl" onclick="downloadChart('chartUEQScales','ueq-scales.png')" title="Download PNG">⬇ PNG</button>
+        </div>
+        <canvas id="chartUEQScales" height="200" style="margin-top:16px"></canvas>
       </div>
 
       <!-- Participants table -->

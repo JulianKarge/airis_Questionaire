@@ -381,6 +381,16 @@ function exportAll() {
   URL.revokeObjectURL(url);
 }
 
+// ── PNG Download ──────────────────────────────────────────────────────────────
+window.downloadChart = function(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = filename;
+  a.click();
+};
+
 // ── Math helpers ──────────────────────────────────────────────────────────────
 const mean = arr => arr.length ? arr.reduce((a,b) => a+b, 0) / arr.length : 0;
 const median = sorted => {

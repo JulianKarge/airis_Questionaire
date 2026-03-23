@@ -354,7 +354,6 @@ function renderSUS(proto) {
     return `<div class="sus-item">
       <p class="q-text"><span class="q-num">${i+1}.</span>${q}</p>
       <div class="likert-row">${radios}</div>
-      <div class="sus-scale-labels"><span>${l.susFootLeft}</span><span>${l.susFootRight}</span></div>
     </div>`;
   }).join('');
 
