@@ -440,6 +440,7 @@ body {
   color: #8a9bb0;
 }
 .timer-status.running { color: var(--green); }
+.timer-status.paused  { color: #F59E0B; }
 .timer-status.stopped { color: #60A5FA; }
 .timer-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn-timer {
@@ -451,8 +452,10 @@ body {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.btn-start-timer { background: var(--green); color: white; }
-.btn-stop-timer  { background: #DC2626; color: white; }
+.btn-start-timer  { background: var(--green); color: white; }
+.btn-pause-timer  { background: #F59E0B; color: white; }
+.btn-resume-timer { background: #2563EB; color: white; }
+.btn-stop-timer   { background: #DC2626; color: white; }
 .btn-timer:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Notepad ─────────────────────────────────────────────── */

@@ -23,8 +23,8 @@ const state = {
     B: new Array(7).fill(false)
   },
   timers: {
-    A: { startMs: null, stopMs: null, durationMs: null },
-    B: { startMs: null, stopMs: null, durationMs: null }
+    A: { startMs: null, stopMs: null, durationMs: null, pausedMs: 0, pauseStartMs: null },
+    B: { startMs: null, stopMs: null, durationMs: null, pausedMs: 0, pauseStartMs: null }
   },
   submittedId: null
 };
@@ -78,7 +78,10 @@ const T = {
     timerRunning: 'Timer running…',
     timerStopped: 'Timer stopped',
     startTimer: 'Start Timer',
+    pauseTimer: '⏸ Pause',
+    resumeTimer: '▶ Resume',
     stopTimer: 'Stop Timer',
+    timerPaused: 'Timer paused',
     continueToQ: 'Continue to Questionnaire →',
     timerWarning: 'Please stop the timer before continuing.',
     tasks: [
@@ -187,7 +190,10 @@ const T = {
     timerRunning: 'Timer läuft…',
     timerStopped: 'Timer gestoppt',
     startTimer: 'Timer starten',
+    pauseTimer: '⏸ Pausieren',
+    resumeTimer: '▶ Fortführen',
     stopTimer: 'Timer stoppen',
+    timerPaused: 'Timer pausiert',
     continueToQ: 'Weiter zum Fragebogen →',
     timerWarning: 'Bitte stoppen Sie den Timer, bevor Sie fortfahren.',
     tasks: [
@@ -321,31 +327,83 @@ function clearTimerInterval() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
-window.startTimer = function(proto) {
-  if (state.timers[proto].startMs) return;
-  state.timers[proto].startMs = Date.now();
+function getEffectiveElapsed(proto) {
+  const tm = state.timers[proto];
+  if (!tm.startMs) return 0;
+  const base = (tm.stopMs || Date.now()) - tm.startMs;
+  const paused = tm.pausedMs + (tm.pauseStartMs ? Date.now() - tm.pauseStartMs : 0);
+  return Math.max(0, base - paused);
+}
 
-  $('startTimerBtn').disabled = true;
-  $('stopTimerBtn').disabled = false;
-  $('timerStatus').textContent = t().timerRunning;
-  $('timerStatus').className = 'timer-status running';
-
+function startLiveUpdate(proto) {
+  clearTimerInterval();
   timerInterval = setInterval(() => {
     const el = $('timerDisplay');
     if (!el) { clearTimerInterval(); return; }
-    el.textContent = formatTime(Date.now() - state.timers[proto].startMs);
+    el.textContent = formatTime(getEffectiveElapsed(proto));
   }, 500);
+}
+
+window.startTimer = function(proto) {
+  if (state.timers[proto].startMs) return;
+  state.timers[proto].startMs = Date.now();
+  state.timers[proto].pausedMs = 0;
+  state.timers[proto].pauseStartMs = null;
+
+  $('startTimerBtn').disabled = true;
+  $('pauseTimerBtn').disabled = false;
+  $('stopTimerBtn').disabled = false;
+  $('timerStatus').textContent = t().timerRunning;
+  $('timerStatus').className = 'timer-status running';
+  startLiveUpdate(proto);
+};
+
+window.pauseTimer = function(proto) {
+  const tm = state.timers[proto];
+  if (!tm.startMs || tm.stopMs || tm.pauseStartMs) return;
+  clearTimerInterval();
+  tm.pauseStartMs = Date.now();
+
+  const el = $('timerDisplay');
+  if (el) el.textContent = formatTime(getEffectiveElapsed(proto));
+
+  $('pauseTimerBtn').textContent = t().resumeTimer;
+  $('pauseTimerBtn').className = 'btn-timer btn-resume-timer';
+  $('pauseTimerBtn').onclick = () => window.resumeTimer(proto);
+  $('timerStatus').textContent = t().timerPaused;
+  $('timerStatus').className = 'timer-status paused';
+};
+
+window.resumeTimer = function(proto) {
+  const tm = state.timers[proto];
+  if (!tm.pauseStartMs) return;
+  tm.pausedMs += Date.now() - tm.pauseStartMs;
+  tm.pauseStartMs = null;
+
+  $('pauseTimerBtn').textContent = t().pauseTimer;
+  $('pauseTimerBtn').className = 'btn-timer btn-pause-timer';
+  $('pauseTimerBtn').onclick = () => window.pauseTimer(proto);
+  $('timerStatus').textContent = t().timerRunning;
+  $('timerStatus').className = 'timer-status running';
+  startLiveUpdate(proto);
 };
 
 window.stopTimer = function(proto) {
-  if (!state.timers[proto].startMs || state.timers[proto].stopMs) return;
+  const tm = state.timers[proto];
+  if (!tm.startMs || tm.stopMs) return;
+  // Settle any active pause before stopping
+  if (tm.pauseStartMs) {
+    tm.pausedMs += Date.now() - tm.pauseStartMs;
+    tm.pauseStartMs = null;
+  }
   clearTimerInterval();
-  state.timers[proto].stopMs = Date.now();
-  state.timers[proto].durationMs = state.timers[proto].stopMs - state.timers[proto].startMs;
+  tm.stopMs = Date.now();
+  tm.durationMs = getEffectiveElapsed(proto);
 
   const el = $('timerDisplay');
-  if (el) el.textContent = formatTime(state.timers[proto].durationMs);
+  if (el) el.textContent = formatTime(tm.durationMs);
 
+  $('pauseTimerBtn').disabled = true;
   $('stopTimerBtn').disabled = true;
   $('timerStatus').textContent = t().timerStopped;
   $('timerStatus').className = 'timer-status stopped';
@@ -431,8 +489,9 @@ function renderTasks(proto) {
   const timeDisplay = stopped
     ? formatTime(timer.durationMs)
     : (started ? formatTime(Date.now() - timer.startMs) : '00:00');
-  const statusText = stopped ? l.timerStopped : (started ? l.timerRunning : l.timerReady);
-  const statusClass = stopped ? 'stopped' : (started ? 'running' : '');
+  const paused = timer.pauseStartMs !== null;
+  const statusText = stopped ? l.timerStopped : (paused ? l.timerPaused : (started ? l.timerRunning : l.timerReady));
+  const statusClass = stopped ? 'stopped' : (paused ? 'paused' : (started ? 'running' : ''));
 
   const taskItems = l.tasks.map((task, i) => {
     const checked = state.tasks[proto][i];
@@ -460,6 +519,11 @@ function renderTasks(proto) {
           <button class="btn-timer btn-start-timer" id="startTimerBtn"
             ${started ? 'disabled' : ''} onclick="startTimer('${proto}')">
             ▶ ${l.startTimer}
+          </button>
+          <button class="btn-timer ${paused ? 'btn-resume-timer' : 'btn-pause-timer'}" id="pauseTimerBtn"
+            ${!started || stopped ? 'disabled' : ''}
+            onclick="${paused ? `resumeTimer('${proto}')` : `pauseTimer('${proto}')`}">
+            ${paused ? l.resumeTimer : l.pauseTimer}
           </button>
           <button class="btn-timer btn-stop-timer" id="stopTimerBtn"
             ${!started || stopped ? 'disabled' : ''} onclick="stopTimer('${proto}')">
@@ -637,13 +701,9 @@ function render() {
 
 function resumeLiveTimer(proto) {
   const timer = state.timers[proto];
-  if (timer.startMs && !timer.stopMs) {
-    clearTimerInterval();
-    timerInterval = setInterval(() => {
-      const el = $('timerDisplay');
-      if (!el) { clearTimerInterval(); return; }
-      el.textContent = formatTime(Date.now() - timer.startMs);
-    }, 500);
+  // Restart live update only if running (not paused, not stopped)
+  if (timer.startMs && !timer.stopMs && !timer.pauseStartMs) {
+    startLiveUpdate(proto);
   }
 }
 
