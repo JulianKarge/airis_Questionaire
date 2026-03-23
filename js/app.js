@@ -5,12 +5,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
+// Steps: 0=lang, 1=details, 2=introFirst, 3=tasksFirst, 4=susFirst, 5=ueqFirst,
+//        6=introSecond, 7=tasksSecond, 8=susSecond, 9=ueqSecond, 10=comparative, 11=thanks
 const state = {
   lang: 'en',
-  // 0=lang,1=details,2=introFirst,3=susFirst,4=ueqFirst,
-  // 5=introSecond,6=susSecond,7=ueqSecond,8=comparative,9=thanks
   step: 0,
-  order: ['A', 'B'],   // counterbalanced per participant
+  order: ['A', 'B'],
   startedWith: 'A',
   participant: { name: '', occupation: '', experience: '' },
   responses: {
@@ -18,18 +18,26 @@ const state = {
     B: { sus: new Array(10).fill(null), ueq: new Array(26).fill(null) },
     comparative: [null, null, null]
   },
+  tasks: {
+    A: new Array(7).fill(false),
+    B: new Array(7).fill(false)
+  },
+  timers: {
+    A: { startMs: null, stopMs: null, durationMs: null },
+    B: { startMs: null, stopMs: null, durationMs: null }
+  },
   submittedId: null
 };
 
-const TOTAL_CONTENT_STEPS = 8;
-let orderPromise = Promise.resolve(); // resolves when counterbalancing is determined
+const TOTAL_CONTENT_STEPS = 10;
+let orderPromise = Promise.resolve();
+let timerInterval = null;
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const T = {
   en: {
     langToggle: 'Deutsch',
     next: 'Next →', back: '← Back', submit: 'Submit Responses',
-    startEval: 'Start Evaluation',
     required: 'Please complete all questions before continuing.',
 
     langTitle: 'Welcome to the AIRIS UX Study',
@@ -46,17 +54,42 @@ const T = {
       ['advanced','Advanced (3–5 years)'],['expert','Expert (5+ years)']
     ],
 
-    protoNames: {
-      A: 'Prototype A – Simple Chat UI',
-      B: 'Prototype B – Hybrid Chat UI'
-    },
+    protoNames: { A: 'Prototype A – Simple Chat UI', B: 'Prototype B – Hybrid Chat UI' },
     protoShort: { A: 'Simple Chat UI', B: 'Hybrid Chat UI' },
 
-    introTexts: {
-      A: 'You will now evaluate <strong>Prototype A – Simple Chat UI</strong>. Please spend a few minutes exploring it, then answer the following questions based on your experience.',
-      B: 'You will now evaluate <strong>Prototype B – Hybrid Chat UI</strong>. Please spend a few minutes exploring it, then answer the following questions based on your experience.'
-    },
-    secondPrefix: 'Well done! Now please evaluate the second prototype.',
+    // Prototype intro (instructions before tasks)
+    protoIntroTitle: (name) => `You will now test: ${name}`,
+    protoIntroSub: 'Before you begin interacting with the prototype, please read through the process below.',
+    protoIntroSteps: [
+      'Read through all the tasks on the next page carefully.',
+      'Click <strong>Start Timer</strong> when you are ready to begin interacting with the prototype.',
+      'Work through the tasks — you can check them off as you complete them.',
+      'When you are finished, click <strong>Stop Timer</strong> and then proceed to the questionnaire.'
+    ],
+    protoIntroNote: 'The timer measures how long you interact with the prototype. Please start it only when you are ready to begin.',
+    understood: 'I understand — Show me the tasks',
+    secondPrefix: 'Well done! Now please do the same with the second prototype.',
+
+    // Task page
+    tasksTitle: 'Tasks',
+    tasksSub: 'Start the timer, complete the tasks in the prototype, then stop the timer when you are done.',
+    tasksLabel: 'Task List',
+    timerReady: 'Timer ready',
+    timerRunning: 'Timer running…',
+    timerStopped: 'Timer stopped',
+    startTimer: 'Start Timer',
+    stopTimer: 'Stop Timer',
+    continueToQ: 'Continue to Questionnaire →',
+    timerWarning: 'Please stop the timer before continuing.',
+    tasks: [
+      'Search for a 1U rack server with at least 50 CPU cores and 128 GB RAM.',
+      'Identify a server configuration optimized for a high-availability database setup.',
+      'Filter the server catalogue by form factor (2U) and sort results by CPU core count.',
+      'Look up the full technical specifications for a specific server model of your choice.',
+      'Compare two different server configurations based on performance metrics and total price.',
+      'Find all servers in the catalogue that support AMD EPYC or Intel Xeon processors.',
+      '[Placeholder Task — please update before the study]'
+    ],
 
     susTitle: 'System Usability Scale',
     susSub: 'Please rate your agreement with the following statements about this prototype.',
@@ -97,24 +130,14 @@ const T = {
     compSub: 'Having tested both prototypes, please answer these final comparison questions.',
     compLabel: 'Comparative — 3 items (scale 1–7)',
     compQuestions: [
-      {
-        text: 'Which interface would you prefer for your daily server configuration work?',
-        leftLabel: 'Strongly prefer\nSimple Chat UI',
-        midLabel: 'No preference',
-        rightLabel: 'Strongly prefer\nHybrid Chat UI'
-      },
-      {
-        text: 'Which interface made the configuration task feel more efficient?',
-        leftLabel: 'Strongly prefer\nSimple Chat UI',
-        midLabel: 'No preference',
-        rightLabel: 'Strongly prefer\nHybrid Chat UI'
-      },
-      {
-        text: 'I would integrate the interactive version into my OCA server configuration workflow.',
-        leftLabel: 'Strongly\ndisagree',
-        midLabel: null,
-        rightLabel: 'Strongly\nagree'
-      }
+      { text: 'Which interface would you prefer for your daily server configuration work?',
+        leftLabel: 'Strongly prefer\nSimple Chat UI', midLabel: 'No preference',
+        rightLabel: 'Strongly prefer\nHybrid Chat UI' },
+      { text: 'Which interface made the configuration task feel more efficient?',
+        leftLabel: 'Strongly prefer\nSimple Chat UI', midLabel: 'No preference',
+        rightLabel: 'Strongly prefer\nHybrid Chat UI' },
+      { text: 'I would integrate the interactive version into my OCA server configuration workflow.',
+        leftLabel: 'Strongly\ndisagree', midLabel: null, rightLabel: 'Strongly\nagree' }
     ],
 
     thanksTitle: 'Thank You!',
@@ -126,7 +149,6 @@ const T = {
   de: {
     langToggle: 'English',
     next: 'Weiter →', back: '← Zurück', submit: 'Antworten absenden',
-    startEval: 'Bewertung starten',
     required: 'Bitte beantworten Sie alle Fragen, bevor Sie fortfahren.',
 
     langTitle: 'Willkommen zur AIRIS UX Studie',
@@ -143,17 +165,40 @@ const T = {
       ['advanced','Fortgeschritten (3–5 Jahre)'],['expert','Experte (5+ Jahre)']
     ],
 
-    protoNames: {
-      A: 'Prototyp A – Simple Chat UI',
-      B: 'Prototyp B – Hybrid Chat UI'
-    },
+    protoNames: { A: 'Prototyp A – Simple Chat UI', B: 'Prototyp B – Hybrid Chat UI' },
     protoShort: { A: 'Simple Chat UI', B: 'Hybrid Chat UI' },
 
-    introTexts: {
-      A: 'Sie werden nun <strong>Prototyp A – Simple Chat UI</strong> bewerten. Erkunden Sie ihn einige Minuten lang und beantworten Sie dann die Fragen auf den folgenden Seiten.',
-      B: 'Sie werden nun <strong>Prototyp B – Hybrid Chat UI</strong> bewerten. Erkunden Sie ihn einige Minuten lang und beantworten Sie dann die Fragen auf den folgenden Seiten.'
-    },
-    secondPrefix: 'Gut gemacht! Bitte bewerten Sie nun den zweiten Prototypen.',
+    protoIntroTitle: (name) => `Sie testen jetzt: ${name}`,
+    protoIntroSub: 'Bevor Sie mit dem Prototypen interagieren, lesen Sie bitte den folgenden Ablauf durch.',
+    protoIntroSteps: [
+      'Lesen Sie alle Aufgaben auf der nächsten Seite sorgfältig durch.',
+      'Klicken Sie auf <strong>Timer starten</strong>, wenn Sie bereit sind, mit dem Prototypen zu interagieren.',
+      'Bearbeiten Sie die Aufgaben — Sie können sie abhaken, sobald Sie sie erledigt haben.',
+      'Wenn Sie fertig sind, klicken Sie auf <strong>Timer stoppen</strong> und fahren Sie dann mit dem Fragebogen fort.'
+    ],
+    protoIntroNote: 'Der Timer misst, wie lange Sie mit dem Prototypen interagieren. Starten Sie ihn erst, wenn Sie bereit sind zu beginnen.',
+    understood: 'Verstanden — Aufgaben anzeigen',
+    secondPrefix: 'Gut gemacht! Bitte führen Sie dasselbe nun mit dem zweiten Prototypen durch.',
+
+    tasksTitle: 'Aufgaben',
+    tasksSub: 'Starten Sie den Timer, bearbeiten Sie die Aufgaben im Prototypen und stoppen Sie den Timer, wenn Sie fertig sind.',
+    tasksLabel: 'Aufgabenliste',
+    timerReady: 'Timer bereit',
+    timerRunning: 'Timer läuft…',
+    timerStopped: 'Timer gestoppt',
+    startTimer: 'Timer starten',
+    stopTimer: 'Timer stoppen',
+    continueToQ: 'Weiter zum Fragebogen →',
+    timerWarning: 'Bitte stoppen Sie den Timer, bevor Sie fortfahren.',
+    tasks: [
+      'Suchen Sie nach einem 1U-Rack-Server mit mindestens 50 CPU-Kernen und 128 GB RAM.',
+      'Identifizieren Sie eine Serverkonfiguration, die für eine hochverfügbare Datenbankumgebung optimiert ist.',
+      'Filtern Sie den Serverkatalog nach Formfaktor (2U) und sortieren Sie die Ergebnisse nach CPU-Kernanzahl.',
+      'Rufen Sie die vollständigen technischen Spezifikationen für ein bestimmtes Servermodell Ihrer Wahl ab.',
+      'Vergleichen Sie zwei verschiedene Serverkonfigurationen anhand von Leistungsmerkmalen und Gesamtpreis.',
+      'Finden Sie alle Server im Katalog, die AMD EPYC- oder Intel Xeon-Prozessoren unterstützen.',
+      '[Platzhalter-Aufgabe — bitte vor der Studie aktualisieren]'
+    ],
 
     susTitle: 'System Usability Scale',
     susSub: 'Bitte bewerten Sie Ihre Zustimmung zu den folgenden Aussagen über diesen Prototypen.',
@@ -173,7 +218,7 @@ const T = {
     ],
 
     ueqTitle: 'User Experience Questionnaire',
-    ueqSub: 'Wählen Sie für jedes Wortpaar den Wert (1–7), der Ihre Erfahrung am besten beschreibt. 1 = eher linkes Wort, 7 = eher rechtes Wort.',
+    ueqSub: 'Wählen Sie für jedes Wortpaar den Wert (1–7), der Ihre Erfahrung am besten beschreibt.',
     ueqPairs: [
       ['unerquicklich','angenehm'],['unverständlich','verständlich'],
       ['kreativ','langweilig'],['leicht zu lernen','schwer zu lernen'],
@@ -195,24 +240,14 @@ const T = {
     compSub: 'Nachdem Sie beide Prototypen getestet haben, beantworten Sie bitte diese abschließenden Vergleichsfragen.',
     compLabel: 'Vergleich — 3 Items (Skala 1–7)',
     compQuestions: [
-      {
-        text: 'Welche Oberfläche würden Sie für Ihre tägliche Serverkonfigurationsarbeit bevorzugen?',
-        leftLabel: 'Starke Präferenz\nSimple Chat UI',
-        midLabel: 'Keine Präferenz',
-        rightLabel: 'Starke Präferenz\nHybrid Chat UI'
-      },
-      {
-        text: 'Mit welcher Oberfläche fühlte sich die Konfigurationsaufgabe effizienter an?',
-        leftLabel: 'Starke Präferenz\nSimple Chat UI',
-        midLabel: 'Keine Präferenz',
-        rightLabel: 'Starke Präferenz\nHybrid Chat UI'
-      },
-      {
-        text: 'Ich würde die interaktive Version in meinen OCA-Serverkonfigurations-Workflow integrieren.',
-        leftLabel: 'Stimme überhaupt\nnicht zu',
-        midLabel: null,
-        rightLabel: 'Stimme\nvöllig zu'
-      }
+      { text: 'Welche Oberfläche würden Sie für Ihre tägliche Serverkonfigurationsarbeit bevorzugen?',
+        leftLabel: 'Starke Präferenz\nSimple Chat UI', midLabel: 'Keine Präferenz',
+        rightLabel: 'Starke Präferenz\nHybrid Chat UI' },
+      { text: 'Mit welcher Oberfläche fühlte sich die Konfigurationsaufgabe effizienter an?',
+        leftLabel: 'Starke Präferenz\nSimple Chat UI', midLabel: 'Keine Präferenz',
+        rightLabel: 'Starke Präferenz\nHybrid Chat UI' },
+      { text: 'Ich würde die interaktive Version in meinen OCA-Serverkonfigurations-Workflow integrieren.',
+        leftLabel: 'Stimme überhaupt\nnicht zu', midLabel: null, rightLabel: 'Stimme\nvöllig zu' }
     ],
 
     thanksTitle: 'Vielen Dank!',
@@ -237,7 +272,7 @@ function setProgress(step) {
   const pct = step <= 1 ? 0 : Math.round(((step - 1) / TOTAL_CONTENT_STEPS) * 100);
   $('progressFill').style.width = pct + '%';
   const info = $('stepInfo');
-  if (step >= 2 && step <= 8) {
+  if (step >= 2 && step <= 10) {
     info.style.display = 'block';
     info.innerHTML = `${t().stepOf} <strong>${step - 1}</strong> ${t().of} ${TOTAL_CONTENT_STEPS}`;
   } else {
@@ -252,6 +287,14 @@ function calculateSUS(arr) {
     sum += (i % 2 === 0) ? (v - 1) : (5 - v);
   });
   return +(sum * 2.5).toFixed(1);
+}
+
+function formatTime(ms) {
+  if (!ms && ms !== 0) return '00:00';
+  const totalSecs = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+  const secs = (totalSecs % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
 }
 
 // ── Counterbalancing ──────────────────────────────────────────────────────────
@@ -273,6 +316,48 @@ async function determineOrder() {
   }
 }
 
+// ── Timer ─────────────────────────────────────────────────────────────────────
+function clearTimerInterval() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+window.startTimer = function(proto) {
+  if (state.timers[proto].startMs) return;
+  state.timers[proto].startMs = Date.now();
+
+  $('startTimerBtn').disabled = true;
+  $('stopTimerBtn').disabled = false;
+  $('timerStatus').textContent = t().timerRunning;
+  $('timerStatus').className = 'timer-status running';
+
+  timerInterval = setInterval(() => {
+    const el = $('timerDisplay');
+    if (!el) { clearTimerInterval(); return; }
+    el.textContent = formatTime(Date.now() - state.timers[proto].startMs);
+  }, 500);
+};
+
+window.stopTimer = function(proto) {
+  if (!state.timers[proto].startMs || state.timers[proto].stopMs) return;
+  clearTimerInterval();
+  state.timers[proto].stopMs = Date.now();
+  state.timers[proto].durationMs = state.timers[proto].stopMs - state.timers[proto].startMs;
+
+  const el = $('timerDisplay');
+  if (el) el.textContent = formatTime(state.timers[proto].durationMs);
+
+  $('stopTimerBtn').disabled = true;
+  $('timerStatus').textContent = t().timerStopped;
+  $('timerStatus').className = 'timer-status stopped';
+  $('continueBtn').disabled = false;
+};
+
+window.toggleTask = function(proto, idx, checked) {
+  state.tasks[proto][idx] = checked;
+  const item = document.getElementById(`taskItem${proto}${idx}`);
+  if (item) item.classList.toggle('done', checked);
+};
+
 // ── Renderers ─────────────────────────────────────────────────────────────────
 function renderLangSelect() {
   $('langToggleBtn').style.display = 'none';
@@ -291,14 +376,10 @@ function renderLangSelect() {
 }
 
 function renderDetails() {
-  const l = t();
-  const p = state.participant;
+  const l = t(), p = state.participant;
   return `
     <div class="card">
-      <div class="card-header">
-        <h2>${l.detailsTitle}</h2>
-        <p>${l.detailsSub}</p>
-      </div>
+      <div class="card-header"><h2>${l.detailsTitle}</h2><p>${l.detailsSub}</p></div>
       <div class="form-group">
         <label>${l.nameLabel}</label>
         <input id="f-name" type="text" placeholder="${l.namePh}" value="${p.name}" />
@@ -321,20 +402,83 @@ function renderDetails() {
     </div>`;
 }
 
-function renderIntro(proto, isSecond) {
+function renderProtoIntro(proto, isSecond) {
   const l = t();
   const name = l.protoNames[proto];
-  const text = l.introTexts[proto];
+  const steps = l.protoIntroSteps.map((s, i) =>
+    `<div class="intro-step"><div class="intro-step-num">${i+1}</div><div>${s}</div></div>`
+  ).join('');
   return `
     <div class="card">
-      <div class="intro-screen">
-        ${isSecond ? `<p style="color:#6B7280;font-size:14px;margin-bottom:12px">${l.secondPrefix}</p>` : ''}
-        <div class="proto-badge">${name}</div>
-        <p>${text}</p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          ${isSecond ? `<button class="btn btn-secondary" onclick="prevStep()">${l.back}</button>` : ''}
-          <button class="btn btn-primary btn-lg" onclick="nextStep()">${l.startEval}</button>
+      ${isSecond ? `<p class="second-prefix">${l.secondPrefix}</p>` : ''}
+      <div class="proto-badge" style="display:inline-block;margin-bottom:12px">${name}</div>
+      <h2 style="font-size:20px;color:#263040;margin-bottom:8px">${l.protoIntroTitle(name)}</h2>
+      <p style="color:#6B7280;margin-bottom:24px">${l.protoIntroSub}</p>
+      <div class="intro-steps">${steps}</div>
+      <div class="intro-note">ℹ ${l.protoIntroNote}</div>
+      <div class="nav-row" style="${isSecond ? '' : 'justify-content:flex-end'}">
+        ${isSecond ? `<button class="btn btn-secondary" onclick="prevStep()">${l.back}</button>` : ''}
+        <button class="btn btn-primary btn-lg" onclick="nextStep()">${l.understood}</button>
+      </div>
+    </div>`;
+}
+
+function renderTasks(proto) {
+  const l = t();
+  const timer = state.timers[proto];
+  const stopped = timer.durationMs !== null;
+  const started = timer.startMs !== null;
+  const timeDisplay = stopped
+    ? formatTime(timer.durationMs)
+    : (started ? formatTime(Date.now() - timer.startMs) : '00:00');
+  const statusText = stopped ? l.timerStopped : (started ? l.timerRunning : l.timerReady);
+  const statusClass = stopped ? 'stopped' : (started ? 'running' : '');
+
+  const taskItems = l.tasks.map((task, i) => {
+    const checked = state.tasks[proto][i];
+    return `<div class="task-item${checked?' done':''}" id="taskItem${proto}${i}">
+      <input type="checkbox" id="task${proto}${i}" ${checked?'checked':''}
+        onchange="toggleTask('${proto}',${i},this.checked)" />
+      <label for="task${proto}${i}">${i+1}. ${task}</label>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="proto-badge" style="display:inline-block;margin-bottom:10px">${l.protoNames[proto]}</div>
+        <h2>${l.tasksTitle}</h2>
+        <p>${l.tasksSub}</p>
+      </div>
+
+      <div class="timer-panel">
+        <div class="timer-left">
+          <div class="timer-display" id="timerDisplay">${timeDisplay}</div>
+          <div class="timer-status ${statusClass}" id="timerStatus">${statusText}</div>
         </div>
+        <div class="timer-buttons">
+          <button class="btn-timer btn-start-timer" id="startTimerBtn"
+            ${started ? 'disabled' : ''} onclick="startTimer('${proto}')">
+            ▶ ${l.startTimer}
+          </button>
+          <button class="btn-timer btn-stop-timer" id="stopTimerBtn"
+            ${!started || stopped ? 'disabled' : ''} onclick="stopTimer('${proto}')">
+            ■ ${l.stopTimer}
+          </button>
+        </div>
+      </div>
+
+      <div class="notepad">
+        <div class="notepad-title">${l.tasksLabel}</div>
+        ${taskItems}
+      </div>
+
+      <div class="nav-row">
+        <button class="btn btn-secondary" onclick="prevStep()">${l.back}</button>
+        <button class="btn btn-primary" id="continueBtn"
+          ${!stopped ? 'disabled' : ''} onclick="nextStep()">
+          ${l.continueToQ}
+        </button>
       </div>
     </div>`;
 }
@@ -356,13 +500,11 @@ function renderSUS(proto) {
       <div class="likert-row">${radios}</div>
     </div>`;
   }).join('');
-
   return `
     <div class="card">
       <div class="card-header">
         <div class="proto-badge" style="display:inline-block;margin-bottom:10px">${l.protoNames[proto]}</div>
-        <h2>${l.susTitle}</h2>
-        <p>${l.susSub}</p>
+        <h2>${l.susTitle}</h2><p>${l.susSub}</p>
       </div>
       <div class="section-label">SUS — 10 items</div>
       ${rows}
@@ -391,13 +533,11 @@ function renderUEQ(proto) {
       <div class="ueq-right">${right}</div>
     </div>`;
   }).join('');
-
   return `
     <div class="card">
       <div class="card-header">
         <div class="proto-badge" style="display:inline-block;margin-bottom:10px">${l.protoNames[proto]}</div>
-        <h2>${l.ueqTitle}</h2>
-        <p>${l.ueqSub}</p>
+        <h2>${l.ueqTitle}</h2><p>${l.ueqSub}</p>
       </div>
       <div class="section-label">UEQ — 26 items</div>
       ${rows}
@@ -432,13 +572,9 @@ function renderComparative() {
       </div>
     </div>`;
   }).join('');
-
   return `
     <div class="card">
-      <div class="card-header">
-        <h2>${l.compTitle}</h2>
-        <p>${l.compSub}</p>
-      </div>
+      <div class="card-header"><h2>${l.compTitle}</h2><p>${l.compSub}</p></div>
       <div class="section-label">${l.compLabel}</div>
       ${items}
       <div class="nav-row">
@@ -450,12 +586,19 @@ function renderComparative() {
 
 function renderThanks() {
   const l = t();
+  const tA = state.timers.A.durationMs;
+  const tB = state.timers.B.durationMs;
   return `
     <div class="card">
       <div class="thanks-screen">
         <div class="check-icon">✓</div>
         <h2>${l.thanksTitle}</h2>
         <p>${l.thanksSub}</p>
+        ${tA || tB ? `
+        <div class="time-summary">
+          <div class="time-chip"><span>${l.protoNames[state.order[0]]}</span><strong>${formatTime(tA || tB)}</strong></div>
+          <div class="time-chip"><span>${l.protoNames[state.order[1]]}</span><strong>${formatTime(tB || tA)}</strong></div>
+        </div>` : ''}
         <button class="btn btn-primary btn-lg" onclick="downloadCSV()">${l.downloadBtn}</button>
       </div>
     </div>`;
@@ -470,26 +613,45 @@ function render() {
 
   let html = '';
   switch (step) {
-    case 0: html = renderLangSelect(); break;
-    case 1: html = renderDetails(); break;
-    case 2: html = renderIntro(order[0], false); break;
-    case 3: html = renderSUS(order[0]); break;
-    case 4: html = renderUEQ(order[0]); break;
-    case 5: html = renderIntro(order[1], true); break;
-    case 6: html = renderSUS(order[1]); break;
-    case 7: html = renderUEQ(order[1]); break;
-    case 8: html = renderComparative(); break;
-    case 9: html = renderThanks(); break;
+    case 0:  html = renderLangSelect(); break;
+    case 1:  html = renderDetails(); break;
+    case 2:  html = renderProtoIntro(order[0], false); break;
+    case 3:  html = renderTasks(order[0]); break;
+    case 4:  html = renderSUS(order[0]); break;
+    case 5:  html = renderUEQ(order[0]); break;
+    case 6:  html = renderProtoIntro(order[1], true); break;
+    case 7:  html = renderTasks(order[1]); break;
+    case 8:  html = renderSUS(order[1]); break;
+    case 9:  html = renderUEQ(order[1]); break;
+    case 10: html = renderComparative(); break;
+    case 11: html = renderThanks(); break;
   }
   $('app').innerHTML = html;
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Restart live timer if returning to a task page mid-session
+  const { order: o } = state;
+  if (step === 3) resumeLiveTimer(o[0]);
+  if (step === 7) resumeLiveTimer(o[1]);
+}
+
+function resumeLiveTimer(proto) {
+  const timer = state.timers[proto];
+  if (timer.startMs && !timer.stopMs) {
+    clearTimerInterval();
+    timerInterval = setInterval(() => {
+      const el = $('timerDisplay');
+      if (!el) { clearTimerInterval(); return; }
+      el.textContent = formatTime(Date.now() - timer.startMs);
+    }, 500);
+  }
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 window.selectLang = function(lang) {
   state.lang = lang;
   document.getElementById('htmlRoot').lang = lang;
-  orderPromise = determineOrder(); // start counterbalancing lookup in background
+  orderPromise = determineOrder();
   state.step = 1;
   render();
 };
@@ -501,17 +663,18 @@ window.toggleLang = function() {
 };
 
 window.prevStep = function() {
+  clearTimerInterval();
   if (state.step > 1) { state.step--; render(); }
 };
 
 window.nextStep = async function() {
   if (!validateStep()) return;
-  // Ensure order is resolved before showing first prototype intro
+  clearTimerInterval();
   if (state.step === 1) {
     $('app').innerHTML = '<div style="text-align:center;padding:48px"><div class="spinner"></div></div>';
     await orderPromise;
   }
-  if (state.step < 9) { state.step++; render(); }
+  if (state.step < 11) { state.step++; render(); }
 };
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -525,30 +688,32 @@ function validateStep() {
     state.participant = { name, occupation: occ, experience: exp };
     return true;
   }
-  if (step === 3) return validateSUS(order[0]);
-  if (step === 4) return validateUEQ(order[0]);
-  if (step === 6) return validateSUS(order[1]);
-  if (step === 7) return validateUEQ(order[1]);
-  if (step === 8) return validateComparative();
+  if (step === 3) {
+    if (!state.timers[order[0]].durationMs) { showToast(t().timerWarning); return false; }
+    return true;
+  }
+  if (step === 4)  return validateSUS(order[0]);
+  if (step === 5)  return validateUEQ(order[0]);
+  if (step === 7) {
+    if (!state.timers[order[1]].durationMs) { showToast(t().timerWarning); return false; }
+    return true;
+  }
+  if (step === 8)  return validateSUS(order[1]);
+  if (step === 9)  return validateUEQ(order[1]);
+  if (step === 10) return validateComparative();
   return true;
 }
 
 function validateSUS(proto) {
-  if (state.responses[proto].sus.some(v => v === null)) {
-    showToast(t().required); return false;
-  }
+  if (state.responses[proto].sus.some(v => v === null)) { showToast(t().required); return false; }
   return true;
 }
 function validateUEQ(proto) {
-  if (state.responses[proto].ueq.some(v => v === null)) {
-    showToast(t().required); return false;
-  }
+  if (state.responses[proto].ueq.some(v => v === null)) { showToast(t().required); return false; }
   return true;
 }
 function validateComparative() {
-  if (state.responses.comparative.some(v => v === null)) {
-    showToast(t().required); return false;
-  }
+  if (state.responses.comparative.some(v => v === null)) { showToast(t().required); return false; }
   return true;
 }
 
@@ -577,13 +742,17 @@ window.submitResponses = async function() {
       ueq: [...state.responses.B.ueq],
       susScore: calculateSUS(state.responses.B.sus)
     },
-    comparative: [...state.responses.comparative]
+    comparative: [...state.responses.comparative],
+    timings: {
+      A: { durationMs: state.timers.A.durationMs, formatted: formatTime(state.timers.A.durationMs) },
+      B: { durationMs: state.timers.B.durationMs, formatted: formatTime(state.timers.B.durationMs) }
+    }
   };
 
   try {
     const docRef = await addDoc(collection(db, 'responses'), payload);
     state.submittedId = docRef.id;
-    state.step = 9;
+    state.step = 11;
     render();
   } catch (err) {
     console.error('Firebase error:', err);
@@ -594,27 +763,25 @@ window.submitResponses = async function() {
 // ── CSV Export ────────────────────────────────────────────────────────────────
 window.downloadCSV = function() {
   const p = state.participant;
-  const rA = state.responses.A;
-  const rB = state.responses.B;
-  const rc = state.responses.comparative;
-
+  const rA = state.responses.A, rB = state.responses.B, rc = state.responses.comparative;
   const headers = [
     'Timestamp','Language','StartedWith','Name','Occupation','Experience',
     ...Array.from({length:10},(_,i)=>`SUS_A_Q${i+1}`), 'SUS_Score_A',
     ...Array.from({length:26},(_,i)=>`UEQ_A_Q${i+1}`),
     ...Array.from({length:10},(_,i)=>`SUS_B_Q${i+1}`), 'SUS_Score_B',
     ...Array.from({length:26},(_,i)=>`UEQ_B_Q${i+1}`),
-    'Comp_Q1','Comp_Q2','Comp_Q3'
+    'Comp_Q1','Comp_Q2','Comp_Q3',
+    'Time_A_ms','Time_A_formatted','Time_B_ms','Time_B_formatted'
   ].join(',');
 
   const row = [
     new Date().toISOString(), state.lang, state.startedWith,
     `"${p.name}"`, `"${p.occupation}"`, p.experience,
-    ...rA.sus, calculateSUS(rA.sus),
-    ...rA.ueq,
-    ...rB.sus, calculateSUS(rB.sus),
-    ...rB.ueq,
-    ...rc
+    ...rA.sus, calculateSUS(rA.sus), ...rA.ueq,
+    ...rB.sus, calculateSUS(rB.sus), ...rB.ueq,
+    ...rc,
+    state.timers.A.durationMs ?? '', formatTime(state.timers.A.durationMs),
+    state.timers.B.durationMs ?? '', formatTime(state.timers.B.durationMs)
   ].join(',');
 
   const csv = headers + '\n' + row;

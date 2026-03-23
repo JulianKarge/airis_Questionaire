@@ -19,7 +19,7 @@ const T = {
     ueqNote: 'Scale 1–7. Mean response per item across all participants.',
     mean: 'Mean', median: 'Median', min: 'Min', max: 'Max',
     participantsBadge: (n) => `${n} participant${n !== 1 ? 's' : ''}`,
-    tableHeaders: ['#','Name','Occupation','Experience','Language','Started With','SUS A','Grade A','SUS B','Grade B','Comp Q1','Comp Q2','Comp Q3','Date'],
+    tableHeaders: ['#','Name','Occupation','Experience','Language','Started With','Time A','Time B','SUS A','Grade A','SUS B','Grade B','Comp Q1','Comp Q2','Comp Q3','Date'],
     susGrades: { excellent:'Excellent', good:'Good', ok:'OK', poor:'Poor' },
     expLabels: { none:'None', beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced', expert:'Expert' },
     filterAll: 'All Languages',
@@ -57,7 +57,7 @@ const T = {
     ueqNote: 'Skala 1–7. Mittelwert pro Item über alle Teilnehmer.',
     mean: 'Mittelwert', median: 'Median', min: 'Min', max: 'Max',
     participantsBadge: (n) => `${n} Teilnehmer${n !== 1 ? '' : ''}`,
-    tableHeaders: ['#','Name','Beruf','Erfahrung','Sprache','Begonnen mit','SUS A','Note A','SUS B','Note B','Vgl. F1','Vgl. F2','Vgl. F3','Datum'],
+    tableHeaders: ['#','Name','Beruf','Erfahrung','Sprache','Begonnen mit','Zeit A','Zeit B','SUS A','Note A','SUS B','Note B','Vgl. F1','Vgl. F2','Vgl. F3','Datum'],
     susGrades: { excellent:'Ausgezeichnet', good:'Gut', ok:'OK', poor:'Schlecht' },
     expLabels: { none:'Keine', beginner:'Anfänger', intermediate:'Mittel', advanced:'Fortgeschritten', expert:'Experte' },
     filterAll: 'Alle Sprachen',
@@ -198,7 +198,7 @@ function renderCharts(data) {
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
   });
-  renderScoreSummary('susSummaryA', susA);
+  renderScoreSummary('susSummaryA', susA, data.map(d => d.timings?.A?.durationMs));
 
   // SUS Distribution B
   destroyChart('susB');
@@ -215,7 +215,7 @@ function renderCharts(data) {
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
   });
-  renderScoreSummary('susSummaryB', susB);
+  renderScoreSummary('susSummaryB', susB, data.map(d => d.timings?.B?.durationMs));
 
   // SUS Per Question Comparison
   const susAQMeans = Array.from({length:10}, (_,i) => mean(data.map(d => d.prototypeA?.sus?.[i] ?? 0)));
@@ -273,18 +273,21 @@ function renderCharts(data) {
   });
 }
 
-function renderScoreSummary(elId, scores) {
+function renderScoreSummary(elId, scores, timesMs) {
   const l = t();
   const sorted = [...scores].sort((a,b)=>a-b);
   const avg = mean(scores).toFixed(1);
   const med = median(sorted).toFixed(1);
   const mi  = sorted[0]?.toFixed(1) ?? '–';
   const mx  = sorted[sorted.length-1]?.toFixed(1) ?? '–';
+  const validTimes = (timesMs || []).filter(v => v);
+  const avgTime = validTimes.length ? fmtMs(mean(validTimes)) : '–';
   $(elId).innerHTML = `
     <div class="score-chip">${l.mean}: <strong>${avg}</strong></div>
     <div class="score-chip">${l.median}: <strong>${med}</strong></div>
     <div class="score-chip">${l.min}: <strong>${mi}</strong></div>
     <div class="score-chip">${l.max}: <strong>${mx}</strong></div>
+    ${validTimes.length ? `<div class="score-chip">Avg. Time: <strong>${avgTime}</strong></div>` : ''}
   `;
 }
 
@@ -308,6 +311,8 @@ function renderTable(data) {
     const date = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleDateString() : '–';
     const comp = d.comparative || [];
     const started = d.startedWith ? `<span class="sus-grade good">${d.startedWith}</span>` : '–';
+    const tA = d.timings?.A?.formatted || d.timings?.A?.durationMs ? fmtMs(d.timings?.A?.durationMs) : '–';
+    const tB = d.timings?.B?.formatted || d.timings?.B?.durationMs ? fmtMs(d.timings?.B?.durationMs) : '–';
     return `<tr>
       <td>${idx+1}</td>
       <td>${d.participant?.name || '–'}</td>
@@ -315,6 +320,8 @@ function renderTable(data) {
       <td>${exp}</td>
       <td>${(d.lang || '–').toUpperCase()}</td>
       <td>${started}</td>
+      <td style="font-variant-numeric:tabular-nums;font-weight:600">${tA}</td>
+      <td style="font-variant-numeric:tabular-nums;font-weight:600">${tB}</td>
       <td class="sus-score">${sA}</td>
       <td>${gradeA}</td>
       <td class="sus-score">${sB}</td>
@@ -351,7 +358,8 @@ function exportAll() {
   );
   const headers = ['ID','Timestamp','Language','StartedWith','Name','Occupation','Experience',
     ...susHeaders, 'SUS_Score_A', ...ueqHeaders, 'SUS_Score_B',
-    'Comp_Q1','Comp_Q2','Comp_Q3'].join(',');
+    'Comp_Q1','Comp_Q2','Comp_Q3',
+    'Time_A_ms','Time_A_formatted','Time_B_ms','Time_B_formatted'].join(',');
 
   const rows = data.map(d => {
     const ts = d.timestamp?.toDate ? d.timestamp.toDate().toISOString() : '';
@@ -367,7 +375,9 @@ function exportAll() {
       ...(d.prototypeB?.sus || new Array(10).fill('')),
       d.prototypeB?.susScore ?? '',
       ...(d.prototypeB?.ueq || new Array(26).fill('')),
-      comp[0] ?? '', comp[1] ?? '', comp[2] ?? ''
+      comp[0] ?? '', comp[1] ?? '', comp[2] ?? '',
+      d.timings?.A?.durationMs ?? '', fmtMs(d.timings?.A?.durationMs),
+      d.timings?.B?.durationMs ?? '', fmtMs(d.timings?.B?.durationMs)
     ].join(',');
   });
 
@@ -390,6 +400,13 @@ window.downloadChart = function(canvasId, filename) {
   a.download = filename;
   a.click();
 };
+
+// ── Time helper ───────────────────────────────────────────────────────────────
+function fmtMs(ms) {
+  if (!ms) return '–';
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
 
 // ── Math helpers ──────────────────────────────────────────────────────────────
 const mean = arr => arr.length ? arr.reduce((a,b) => a+b, 0) / arr.length : 0;
