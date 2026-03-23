@@ -19,8 +19,8 @@ const state = {
     comparative: [null, null, null]
   },
   tasks: {
-    A: new Array(7).fill(false),
-    B: new Array(7).fill(false)
+    A: new Array(8).fill(false),
+    B: new Array(8).fill(false)
   },
   timers: {
     A: { startMs: null, stopMs: null, durationMs: null, pausedMs: 0, pauseStartMs: null },
@@ -84,15 +84,28 @@ const T = {
     timerPaused: 'Timer paused',
     continueToQ: 'Continue to Questionnaire →',
     timerWarning: 'Please stop the timer before continuing.',
-    tasks: [
-      'Search for a 1U rack server with at least 50 CPU cores and 128 GB RAM.',
-      'Identify a server configuration optimized for a high-availability database setup.',
-      'Filter the server catalogue by form factor (2U) and sort results by CPU core count.',
-      'Look up the full technical specifications for a specific server model of your choice.',
-      'Compare two different server configurations based on performance metrics and total price.',
-      'Find all servers in the catalogue that support AMD EPYC or Intel Xeon processors.',
-      '[Placeholder Task — please update before the study]'
-    ],
+    tasks: {
+      B: [
+        'Build a server configuration: 50 total cores, 1 CPU, 256 GB RAM, 1 server, PUE 1.3',
+        'Adjust the RAM to 512 GB and the PUE to 1.6',
+        'Ask the model what the average PUE value is',
+        'Ask the model to change the PUE to that average value',
+        'Ask: What is the difference between ARM and x86?',
+        'Ask: Tell me about RAID levels',
+        'Start a new configuration using guided help (use the Solution Agent in the parameter form)',
+        'Ask for the average emission settings for Germany'
+      ],
+      A: [
+        'Build a server configuration: 128 cores per socket, 2 sockets, 512 GB RAM, 3 servers, PUE 1.5',
+        'Adjust cores to 64 per socket and delivery time to 60 days',
+        'Ask the model what typical electricity costs are for the US',
+        'Ask the model to apply those values',
+        'Ask: What does ECC memory mean?',
+        'Ask: Explain the difference between NVMe and SAS storage',
+        'Start a new configuration and ask the model for help',
+        'Ask for the average emission settings for Nordic countries'
+      ]
+    },
 
     susTitle: 'System Usability Scale',
     susSub: 'Please rate your agreement with the following statements about this prototype.',
@@ -196,15 +209,28 @@ const T = {
     timerPaused: 'Timer pausiert',
     continueToQ: 'Weiter zum Fragebogen →',
     timerWarning: 'Bitte stoppen Sie den Timer, bevor Sie fortfahren.',
-    tasks: [
-      'Suchen Sie nach einem 1U-Rack-Server mit mindestens 50 CPU-Kernen und 128 GB RAM.',
-      'Identifizieren Sie eine Serverkonfiguration, die für eine hochverfügbare Datenbankumgebung optimiert ist.',
-      'Filtern Sie den Serverkatalog nach Formfaktor (2U) und sortieren Sie die Ergebnisse nach CPU-Kernanzahl.',
-      'Rufen Sie die vollständigen technischen Spezifikationen für ein bestimmtes Servermodell Ihrer Wahl ab.',
-      'Vergleichen Sie zwei verschiedene Serverkonfigurationen anhand von Leistungsmerkmalen und Gesamtpreis.',
-      'Finden Sie alle Server im Katalog, die AMD EPYC- oder Intel Xeon-Prozessoren unterstützen.',
-      '[Platzhalter-Aufgabe — bitte vor der Studie aktualisieren]'
-    ],
+    tasks: {
+      B: [
+        'Erstellen Sie eine Serverkonfiguration: 50 Kerne gesamt, 1 CPU, 256 GB RAM, 1 Server, PUE 1.3',
+        'Passen Sie den RAM auf 512 GB und den PUE auf 1.6 an',
+        'Fragen Sie das Modell nach dem durchschnittlichen PUE-Wert',
+        'Bitten Sie das Modell, den PUE auf diesen Durchschnittswert zu ändern',
+        'Fragen Sie: Was ist der Unterschied zwischen ARM und x86?',
+        'Fragen Sie: Erkläre mir RAID-Level',
+        'Starten Sie eine neue Konfiguration mit der geführten Hilfe (Solution Agent im Parameterformular)',
+        'Fragen Sie nach den durchschnittlichen Emissionswerten für Deutschland'
+      ],
+      A: [
+        'Erstellen Sie eine Serverkonfiguration: 128 Kerne pro Socket, 2 Sockets, 512 GB RAM, 3 Server, PUE 1.5',
+        'Passen Sie die Kerne auf 64 pro Socket und die Lieferzeit auf 60 Tage an',
+        'Fragen Sie das Modell nach typischen Stromkosten für die USA',
+        'Bitten Sie das Modell, diese Werte zu übernehmen',
+        'Fragen Sie: Was bedeutet ECC-Speicher?',
+        'Fragen Sie: Erkläre den Unterschied zwischen NVMe und SAS-Speicher',
+        'Starten Sie eine neue Konfiguration und bitten Sie das Modell um Hilfe',
+        'Fragen Sie nach den durchschnittlichen Emissionswerten für nordische Länder'
+      ]
+    },
 
     susTitle: 'System Usability Scale',
     susSub: 'Bitte bewerten Sie Ihre Zustimmung zu den folgenden Aussagen über diesen Prototypen.',
@@ -493,7 +519,7 @@ function renderTasks(proto) {
   const statusText = stopped ? l.timerStopped : (paused ? l.timerPaused : (started ? l.timerRunning : l.timerReady));
   const statusClass = stopped ? 'stopped' : (paused ? 'paused' : (started ? 'running' : ''));
 
-  const taskItems = l.tasks.map((task, i) => {
+  const taskItems = l.tasks[proto].map((task, i) => {
     const checked = state.tasks[proto][i];
     return `<div class="task-item${checked?' done':''}" id="taskItem${proto}${i}">
       <input type="checkbox" id="task${proto}${i}" ${checked?'checked':''}
