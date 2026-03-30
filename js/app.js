@@ -9,7 +9,7 @@ import {
 //        6=introSecond, 7=tasksSecond, 8=susSecond, 9=ueqSecond, 10=comparative, 11=thanks
 const state = {
   lang: 'en',
-  step: 0,
+  step: 1,
   order: ['A', 'B'],
   startedWith: 'A',
   participant: { name: '', occupation: '', experience: '' },
@@ -36,7 +36,6 @@ let timerInterval = null;
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const T = {
   en: {
-    langToggle: 'Deutsch',
     next: 'Next →', back: '← Back', submit: 'Submit Responses',
     required: 'Please complete all questions before continuing.',
 
@@ -86,24 +85,24 @@ const T = {
     timerWarning: 'Please stop the timer before continuing.',
     tasks: {
       B: [
-        'Build a server configuration: 50 total cores, 1 CPU, 256 GB RAM, 1 server, PUE 1.3',
-        'Tell the model: "I want to adjust PUE and RAM." Then increase the RAM to 512 GB and PUE to 1.6',
-        'Ask the model what the average PUE value is',
-        'Ask the model to change the PUE to that average value',
-        'Ask: What is the difference between ARM and x86?',
-        'Ask: Tell me about RAID levels',
-        'Click the Parameter button, then click "Build with Solution Agent". Build any configuration you like',
-        'Ask for the average emission settings for Germany'
+        'Build a server configuration by using the custom sizing parameters. The server should have 128 GB RAM and a PUE of 1.2',
+        'Ask: "I want to adjust PUE and RAM." Then increase the RAM to 512 GB and PUE to 1.6',
+        'Ask: "What is the average German PUE value?"',
+        'Ask: "Change the PUE to that average value"',
+        'Ask: "What is the difference between ARM and x86?"',
+        'Ask: "Tell me about 5 common RAID levels"',
+        'Click the Parameter button, then click Build with Solution Agent. Build any configuration you like',
+        'Ask: "What is HCI?"'
       ],
       A: [
-        'Build a server configuration: 128 cores per socket, 2 sockets, 512 GB RAM, 3 servers, PUE 1.5',
-        'Adjust cores to 64 per socket and delivery time to 60 days',
-        'Ask the model what typical electricity costs are for the US',
-        'Ask the model to apply those values',
-        'Ask: What does ECC memory mean?',
-        'Ask: Explain the difference between NVMe and SAS storage',
-        'Start a new configuration and ask the model for help',
-        'Ask for the average emission settings for Nordic countries'
+        'Ask: "Build a server configuration: 128 cores per socket, 2 sockets, 512 GB RAM, 3 servers, PUE 1.5"',
+        'Ask: "Change the cores to 64 per socket and the delivery time to 60 days"',
+        'Ask: "What are the typical electricity costs for the US?"',
+        'Ask: "Apply those electricity cost values"',
+        'Ask: "What does ECC memory mean?"',
+        'Ask: "Explain the difference between NVMe and SAS storage"',
+        'Ask: "I want to start a new config and need your help"',
+        'Ask: "What are the average emission settings for Nordic countries?"'
       ]
     },
 
@@ -160,138 +159,31 @@ const T = {
     thanksSub: 'Your responses have been saved. Thank you for participating in this study.',
     downloadBtn: '⬇ Download My Results (CSV)',
     stepOf: 'Step', of: 'of'
-  },
-
-  de: {
-    langToggle: 'English',
-    next: 'Weiter →', back: '← Zurück', submit: 'Antworten absenden',
-    required: 'Bitte beantworten Sie alle Fragen, bevor Sie fortfahren.',
-
-    langTitle: 'Willkommen zur AIRIS UX Studie',
-    langSub: 'Bitte wählen Sie Ihre bevorzugte Sprache.',
-
-    detailsTitle: 'Angaben zur Person',
-    detailsSub: 'Bitte machen Sie vor Beginn einige Angaben zu Ihrer Person.',
-    nameLabel: 'Vollständiger Name *', namePh: 'Ihr vollständiger Name',
-    occLabel: 'Beruf / Rolle *', occPh: 'z. B. Software-Ingenieur, UX-Designer, Student',
-    expLabel: 'UX / Design Erfahrung *',
-    expOpts: [
-      ['','Erfahrungsniveau auswählen'],['none','Keine Erfahrung'],
-      ['beginner','Anfänger (< 1 Jahr)'],['intermediate','Mittel (1–3 Jahre)'],
-      ['advanced','Fortgeschritten (3–5 Jahre)'],['expert','Experte (5+ Jahre)']
-    ],
-
-    protoNames: { A: 'Prototyp A – Simple Chat UI', B: 'Prototyp B – Hybrid Chat UI' },
-    protoShort: { A: 'Simple Chat UI', B: 'Hybrid Chat UI' },
-
-    protoIntroTitle: (name) => `Sie testen jetzt: ${name}`,
-    protoIntroSub: 'Bevor Sie mit dem Prototypen interagieren, lesen Sie bitte den folgenden Ablauf durch.',
-    protoIntroSteps: [
-      'Lesen Sie alle Aufgaben auf der nächsten Seite sorgfältig durch.',
-      'Klicken Sie auf <strong>Timer starten</strong>, wenn Sie bereit sind, mit dem Prototypen zu interagieren.',
-      'Bearbeiten Sie die Aufgaben — Sie können sie abhaken, sobald Sie sie erledigt haben.',
-      'Wenn Sie fertig sind, klicken Sie auf <strong>Timer stoppen</strong> und fahren Sie dann mit dem Fragebogen fort.'
-    ],
-    protoIntroNote: 'Der Timer misst, wie lange Sie mit dem Prototypen interagieren. Starten Sie ihn erst, wenn Sie bereit sind zu beginnen.',
-    understood: 'Verstanden — Aufgaben anzeigen',
-    secondPrefix: 'Gut gemacht! Bitte führen Sie dasselbe nun mit dem zweiten Prototypen durch.',
-
-    tasksTitle: 'Aufgaben',
-    tasksSub: 'Starten Sie den Timer, bearbeiten Sie die Aufgaben im Prototypen und stoppen Sie den Timer, wenn Sie fertig sind.',
-    tasksLabel: 'Aufgabenliste',
-    timerReady: 'Timer bereit',
-    timerRunning: 'Timer läuft…',
-    timerStopped: 'Timer gestoppt',
-    startTimer: 'Timer starten',
-    pauseTimer: '⏸ Pausieren',
-    resumeTimer: '▶ Fortführen',
-    stopTimer: 'Timer stoppen',
-    timerPaused: 'Timer pausiert',
-    continueToQ: 'Weiter zum Fragebogen →',
-    timerWarning: 'Bitte stoppen Sie den Timer, bevor Sie fortfahren.',
-    tasks: {
-      B: [
-        'Erstellen Sie eine Serverkonfiguration: 50 Kerne gesamt, 1 CPU, 256 GB RAM, 1 Server, PUE 1.3',
-        'Sage dem Modell: „Ich möchte PUE und RAM anpassen." Erhöhe dann den RAM auf 512 GB und den PUE auf 1.6',
-        'Fragen Sie das Modell nach dem durchschnittlichen PUE-Wert',
-        'Bitten Sie das Modell, den PUE auf diesen Durchschnittswert zu ändern',
-        'Fragen Sie: Was ist der Unterschied zwischen ARM und x86?',
-        'Fragen Sie: Erkläre mir RAID-Level',
-        'Klicke auf den Parameter-Button und dann auf „Build with Solution Agent". Baue damit eine beliebige Konfiguration',
-        'Fragen Sie nach den durchschnittlichen Emissionswerten für Deutschland'
-      ],
-      A: [
-        'Erstellen Sie eine Serverkonfiguration: 128 Kerne pro Socket, 2 Sockets, 512 GB RAM, 3 Server, PUE 1.5',
-        'Passen Sie die Kerne auf 64 pro Socket und die Lieferzeit auf 60 Tage an',
-        'Fragen Sie das Modell nach typischen Stromkosten für die USA',
-        'Bitten Sie das Modell, diese Werte zu übernehmen',
-        'Fragen Sie: Was bedeutet ECC-Speicher?',
-        'Fragen Sie: Erkläre den Unterschied zwischen NVMe und SAS-Speicher',
-        'Starten Sie eine neue Konfiguration und bitten Sie das Modell um Hilfe',
-        'Fragen Sie nach den durchschnittlichen Emissionswerten für nordische Länder'
-      ]
-    },
-
-    susTitle: 'System Usability Scale',
-    susSub: 'Bitte bewerten Sie Ihre Zustimmung zu den folgenden Aussagen über diesen Prototypen.',
-    susScaleLabels: ['Stimme überhaupt\nnicht zu','Stimme\nnicht zu','Neutral','Stimme\nzu','Stimme\nvöllig zu'],
-    susFootLeft: 'Stimme überhaupt nicht zu', susFootRight: 'Stimme völlig zu',
-    susQuestions: [
-      'Ich denke, dass ich dieses System gerne häufig benutzen würde.',
-      'Ich fand das System unnötig komplex.',
-      'Ich fand das System einfach zu benutzen.',
-      'Ich denke, dass ich die Unterstützung durch eine technische Person benötigen würde, um dieses System benutzen zu können.',
-      'Ich fand, dass die verschiedenen Funktionen in diesem System gut integriert waren.',
-      'Ich fand, dass es in diesem System zu viele Inkonsistenzen gab.',
-      'Ich kann mir vorstellen, dass die meisten Menschen den Umgang mit diesem System sehr schnell lernen würden.',
-      'Ich fand das System sehr umständlich zu benutzen.',
-      'Ich fühlte mich im Umgang mit dem System sehr sicher.',
-      'Ich musste viele Dinge lernen, bevor ich mit diesem System loslegen konnte.'
-    ],
-
-    ueqTitle: 'User Experience Questionnaire',
-    ueqSub: 'Wählen Sie für jedes Wortpaar den Wert (1–7), der Ihre Erfahrung am besten beschreibt.',
-    ueqPairs: [
-      ['unerquicklich','angenehm'],['unverständlich','verständlich'],
-      ['kreativ','langweilig'],['leicht zu lernen','schwer zu lernen'],
-      ['wertvoll','minderwertig'],['langweilig','spannend'],
-      ['nicht interessant','interessant'],['unvorhersehbar','vorhersehbar'],
-      ['schnell','langsam'],['erfinderisch','konventionell'],
-      ['behindernd','unterstützend'],['gut','schlecht'],
-      ['kompliziert','einfach'],['unsympathisch','angenehm'],
-      ['gewöhnlich','innovativ'],['unangenehm','angenehm'],
-      ['sicher','nicht sicher'],['motivierend','demotivierend'],
-      ['entspricht den Erwartungen','entspricht nicht den Erwartungen'],
-      ['ineffizient','effizient'],['klar','verwirrend'],
-      ['unpraktisch','praktisch'],['übersichtlich','unübersichtlich'],
-      ['attraktiv','unattraktiv'],['freundlich','unfreundlich'],
-      ['konservativ','innovativ']
-    ],
-
-    compTitle: 'Vergleichende Bewertung',
-    compSub: 'Nachdem Sie beide Prototypen getestet haben, beantworten Sie bitte diese abschließenden Vergleichsfragen.',
-    compLabel: 'Vergleich — 3 Items (Skala 1–7)',
-    compQuestions: [
-      { text: 'Welche Oberfläche würden Sie für Ihre tägliche Serverkonfigurationsarbeit bevorzugen?',
-        leftLabel: 'Starke Präferenz\nSimple Chat UI', midLabel: 'Keine Präferenz',
-        rightLabel: 'Starke Präferenz\nHybrid Chat UI' },
-      { text: 'Mit welcher Oberfläche fühlte sich die Konfigurationsaufgabe effizienter an?',
-        leftLabel: 'Starke Präferenz\nSimple Chat UI', midLabel: 'Keine Präferenz',
-        rightLabel: 'Starke Präferenz\nHybrid Chat UI' },
-      { text: 'Ich würde die interaktive Version in meinen OCA-Serverkonfigurations-Workflow integrieren.',
-        leftLabel: 'Stimme überhaupt\nnicht zu', midLabel: null, rightLabel: 'Stimme\nvöllig zu' }
-    ],
-
-    thanksTitle: 'Vielen Dank!',
-    thanksSub: 'Ihre Antworten wurden erfolgreich gespeichert. Vielen Dank für Ihre Teilnahme.',
-    downloadBtn: '⬇ Meine Ergebnisse herunterladen (CSV)',
-    stepOf: 'Schritt', of: 'von'
   }
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const t = () => T[state.lang];
+const t = () => T.en;
+
+function formatTaskText(text) {
+  return text.replace(/"([^"]+)"/g, (_, quoted) =>
+    `<span class="prompt-chip" onclick="copyPrompt(this, '${quoted.replace(/'/g, "\\'")}', event)" title="Click to copy">
+      <span class="prompt-text">${quoted}</span>
+      <span class="prompt-copy-icon">📋</span>
+    </span>`
+  );
+}
+
+window.copyPrompt = function(el, text, ev) {
+  if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    const icon = el.querySelector('.prompt-copy-icon');
+    icon.textContent = '✓';
+    setTimeout(() => { el.classList.remove('copied'); icon.textContent = '📋'; }, 1500);
+  });
+};
 
 function showToast(msg) {
   const el = $('toast');
@@ -443,22 +335,6 @@ window.toggleTask = function(proto, idx, checked) {
 };
 
 // ── Renderers ─────────────────────────────────────────────────────────────────
-function renderLangSelect() {
-  $('langToggleBtn').style.display = 'none';
-  return `
-    <div class="lang-screen">
-      <div class="card" style="max-width:480px;width:100%;text-align:center">
-        <div style="width:52px;height:52px;background:#01A982;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px;margin:0 auto 16px">AI</div>
-        <h1 style="font-size:24px;color:#263040;margin-bottom:8px">Welcome / Willkommen</h1>
-        <p style="color:#6B7280;margin-bottom:28px">AIRIS UX Study<br><small>Please select your language / Bitte wählen Sie Ihre Sprache</small></p>
-        <div class="lang-btns">
-          <button class="lang-btn-lg" onclick="selectLang('en')">🇬🇧 English</button>
-          <button class="lang-btn-lg" onclick="selectLang('de')">🇩🇪 Deutsch</button>
-        </div>
-      </div>
-    </div>`;
-}
-
 function renderDetails() {
   const l = t(), p = state.participant;
   return `
@@ -524,7 +400,7 @@ function renderTasks(proto) {
     return `<div class="task-item${checked?' done':''}" id="taskItem${proto}${i}">
       <input type="checkbox" id="task${proto}${i}" ${checked?'checked':''}
         onchange="toggleTask('${proto}',${i},this.checked)" />
-      <label for="task${proto}${i}">${i+1}. ${task}</label>
+      <label for="task${proto}${i}">${i+1}. ${formatTaskText(task)}</label>
     </div>`;
   }).join('');
 
@@ -595,6 +471,9 @@ function renderSUS(proto) {
       <div class="card-header">
         <div class="proto-badge" style="display:inline-block;margin-bottom:10px">${l.protoNames[proto]}</div>
         <h2>${l.susTitle}</h2><p>${l.susSub}</p>
+      </div>
+      <div class="reminder-note" style="background:#FFF8E1;border-left:4px solid #F9A825;padding:12px 16px;margin:0 0 20px;border-radius:6px;font-size:14px;color:#5D4037">
+        <strong>Reminder:</strong> Please focus your evaluation on the visual design and usability of the interface — not on whether the model produced the correct server configuration.
       </div>
       <div class="section-label">SUS — 10 items</div>
       ${rows}
@@ -698,12 +577,9 @@ function renderThanks() {
 function render() {
   const { step, order } = state;
   setProgress(step);
-  $('langToggleBtn').textContent = t().langToggle;
-  $('langToggleBtn').style.display = step === 0 ? 'none' : '';
 
   let html = '';
   switch (step) {
-    case 0:  html = renderLangSelect(); break;
     case 1:  html = renderDetails(); break;
     case 2:  html = renderProtoIntro(order[0], false); break;
     case 3:  html = renderTasks(order[0]); break;
@@ -734,20 +610,6 @@ function resumeLiveTimer(proto) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-window.selectLang = function(lang) {
-  state.lang = lang;
-  document.getElementById('htmlRoot').lang = lang;
-  orderPromise = determineOrder();
-  state.step = 1;
-  render();
-};
-
-window.toggleLang = function() {
-  state.lang = state.lang === 'en' ? 'de' : 'en';
-  document.getElementById('htmlRoot').lang = state.lang;
-  render();
-};
-
 window.prevStep = function() {
   clearTimerInterval();
   if (state.step > 1) { state.step--; render(); }
@@ -881,5 +743,5 @@ window.downloadCSV = function() {
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-$('langToggleBtn').addEventListener('click', window.toggleLang);
+orderPromise = determineOrder();
 render();
